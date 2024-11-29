@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spinningpass</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #timer {
+            font-size: 2em;
+            margin: 20px 0;
+        }
+        #image {
+            max-width: 300px;
+            margin: 20px 0;
+        }
+        .controls {
+            margin: 20px;
+        }
+        button {
+            font-size: 1em;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        #interval-list {
+            text-align: left;
+            margin: 20px auto;
+            max-width: 400px;
+        }
+        .interval-item {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Spinningpass</h1>
+    <div id="current-song"></div>
+    <div id="current-interval"></div>
+    <div id="timer">00:00</div>
+    <img id="image" src="" alt="Intervallbild">
+    <div id="next-interval"></div>
+    <div class="controls">
+        <button id="start">Starta Pass</button>
+        <button id="pause">Pausa</button>
+    </div>
+    <div id="interval-list"></div>
+    <script>
+        let songs = [];
+        let currentSongIndex = 0;
+        let currentIntervalIndex = 0;
+        let timeRemaining = 0;
+        let timerRunning = false;
+
+        const timerElement = document.getElementById("timer");
+        const currentSongElement = document.getElementById("current-song");
+        const currentIntervalElement = document.getElementById("current-interval");
+        const imageElement = document.getElementById("image");
+        const nextIntervalElement = document.getElementById("next-interval");
+        const intervalListElement = document.getElementById("interval-list");
+        const startButton = document.getElementById("start");
+        const pauseButton = document.getElementById("pause");
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function displayIntervals(song) {
+            intervalListElement.innerHTML = "<h3>Kommande Intervaller:</h3>";
+            song.intervals.forEach((interval, index) => {
+                const intervalInfo = document.createElement("div");
+                intervalInfo.className = "interval-item";
+                intervalInfo.textContent = `Intervall ${index + 1}: ${interval.name} - ${formatTime(interval.duration)}`;
+                intervalListElement.appendChild(intervalInfo);
+            });
+        }
+
+        function loadNextInterval() {
+            const currentSong = songs[currentSongIndex];
+            const currentInterval = currentSong.intervals[currentIntervalIndex];
+            const nextInterval = currentSong.intervals[currentIntervalIndex + 1];
+            timeRemaining = currentInterval.duration;
+
+            timerElement.textContent = formatTime(timeRemaining);
+            currentSongElement.textContent = `Nuvarande låt: ${currentSong.title}`;
+            currentIntervalElement.textContent = `Intervall: ${currentInterval.name}`;
+            imageElement.src = currentInterval.image;
+
+            if (nextInterval) {
+                nextIntervalElement.textContent = `Nästa intervall: ${nextInterval.name} - ${formatTime(nextInterval.duration)}`;
+            } else {
+                nextIntervalElement.textContent = "Inga fler intervaller i denna låt";
+            }
+
+            displayIntervals(currentSong);
+        }
+
+        async function loadIntervals() {
+            try {
+                const response = await fetch("intervals.json");
+                songs = await response.json();
+                loadNextInterval();
+            } catch (error) {
+                console.error("Kunde inte läsa in intervallfilen:", error);
+            }
+        }
+
+        startButton.addEventListener("click", () => {
+            timerRunning = true;
+        });
+
+        pauseButton.addEventListener("click", () => {
+            timerRunning = false;
+        });
+
+        const timerInterval = setInterval(() => {
+            if (timerRunning && timeRemaining > 0) {
+                timeRemaining--;
+                timerElement.textContent = formatTime(timeRemaining);
+            } else if (timerRunning && timeRemaining === 0) {
+                currentIntervalIndex++;
+                if (currentIntervalIndex >= songs[currentSongIndex].intervals.length) {
+                    currentSongIndex++;
+                    currentIntervalIndex = 0;
+                    if (currentSongIndex >= songs.length) {
+                        clearInterval(timerInterval);
+                        timerElement.textContent = "Passet är klart!";
+                        return;
+                    }
+                }
+                loadNextInterval();
+            }
+        }, 1000);
+
+        loadIntervals();
+    </script>
+</body>
+</html>
