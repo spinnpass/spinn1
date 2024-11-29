@@ -1,0 +1,16 @@
+[
+    {
+        "title": "Higher Love",
+        "intervals": [
+            { "name": "Uppvärmning", "duration": 300, "image": "warmup.jpg" },
+            { "name": "Lätt arbete", "duration": 300, "image": "work.jpg" }
+        ]
+    },
+    {
+        "title": "Paradise",
+        "intervals": [
+            { "name": "Klättring", "duration": 400, "image": "climb.jpg" },
+            { "name": "Vila", "duration": 200, "image": "rest.jpg" }
+        ]
+    }
+]
